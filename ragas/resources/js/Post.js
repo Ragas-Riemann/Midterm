@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import "../sass/Post.scss"; // import SCSS
 
 export default function Posts() {
   const [posts, setPosts] = useState([]);
@@ -19,42 +20,28 @@ export default function Posts() {
       setPosts(res.data);
     } catch (err) {
       console.error("Fetch error:", err);
-      alert("Could not fetch posts (check backend).");
     } finally {
       setLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setTitle("");
-    setBody("");
-    setEditingId(null);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !body) {
-      alert("Please fill title and body.");
-      return;
-    }
+    if (!title || !body) return alert("Fill all fields");
+
     try {
       if (editingId) {
         await axios.put(`/api/posts/${editingId}`, { title, body });
       } else {
         await axios.post("/api/posts", { title, body });
       }
-      resetForm();
+      setTitle("");
+      setBody("");
+      setEditingId(null);
       fetchPosts();
     } catch (err) {
       console.error(err);
-      alert("Request failed.");
     }
-  };
-
-  const startEdit = (post) => {
-    setEditingId(post.id);
-    setTitle(post.title);
-    setBody(post.body);
   };
 
   const handleDelete = async (id) => {
@@ -64,93 +51,157 @@ export default function Posts() {
       fetchPosts();
     } catch (err) {
       console.error(err);
-      alert("Delete failed.");
     }
-  };
-
-  const renderPosts = () => {
-    if (loading) return React.createElement("div", null, "Loading…");
-    if (posts.length === 0) return React.createElement("div", null, "No posts yet.");
-
-    return React.createElement(
-      "ul",
-      null,
-      posts.map((p) =>
-        React.createElement(
-          "li",
-          { key: p.id, style: { marginBottom: 12 } },
-          React.createElement("strong", null, p.title),
-          React.createElement("p", { style: { margin: "4px 0" } }, p.body),
-          React.createElement(
-            "small",
-            null,
-            "id: " + p.id + " — created: " + new Date(p.created_at).toLocaleString()
-          ),
-          React.createElement(
-            "div",
-            null,
-            React.createElement(
-              "button",
-              { onClick: () => startEdit(p), style: { marginRight: 8 } },
-              "Edit"
-            ),
-            React.createElement(
-              "button",
-              { onClick: () => handleDelete(p.id) },
-              "Delete"
-            )
-          )
-        )
-      )
-    );
   };
 
   return React.createElement(
     "div",
-    { style: { maxWidth: 800, margin: "0 auto", padding: 20 } },
-    React.createElement("h1", null, "Posts CRUD"),
+    { className: "dashboard" },
 
-    // Form
+    // Sidebar
     React.createElement(
-      "form",
-      { onSubmit: handleSubmit, style: { marginBottom: 20 } },
-      React.createElement("h3", null, editingId ? "Edit post" : "Create post"),
+      "aside",
+      { className: "sidebar" },
+      React.createElement("h2", null, "FSUU Admin"),
       React.createElement(
-        "div",
+        "nav",
         null,
-        React.createElement("input", {
-          placeholder: "Title",
-          value: title,
-          onChange: (e) => setTitle(e.target.value),
-          style: { width: "100%", padding: 8, marginBottom: 8 },
-        })
-      ),
-      React.createElement(
-        "div",
-        null,
-        React.createElement("textarea", {
-          placeholder: "Body",
-          value: body,
-          onChange: (e) => setBody(e.target.value),
-          rows: 4,
-          style: { width: "100%", padding: 8 },
-        })
-      ),
-      React.createElement(
-        "div",
-        { style: { marginTop: 8 } },
-        React.createElement("button", { type: "submit" }, editingId ? "Update" : "Create"),
-        editingId &&
-          React.createElement(
-            "button",
-            { type: "button", onClick: resetForm, style: { marginLeft: 8 } },
-            "Cancel"
-          )
+        ["Dashboard", "Students", "Faculty", "Courses", "Attendance", "Departments", "Settings"].map((item) =>
+          React.createElement("a", { key: item, href: "#" }, item)
+        )
       )
     ),
 
-    React.createElement("hr"),
-    React.createElement("h3", null, "All posts"),
-    renderPosts()
+    // Main section
+    React.createElement(
+      "div",
+      { className: "main" },
+
+      // Topbar
+      React.createElement(
+        "header",
+        { className: "topbar" },
+        React.createElement("h1", null, "Student and Faculty Profile Management System"),
+        React.createElement("div", { className: "profile" },
+          React.createElement("img", { src: "/profile.png", alt: "profile" })
+        )
+      ),
+
+      // Content
+      React.createElement(
+        "section",
+        { className: "content" },
+        React.createElement(
+          "div",
+          { className: "card" },
+
+          // Card header
+          React.createElement(
+            "div",
+            { className: "card-header" },
+            React.createElement("h2", null, "Students"),
+            
+          ),
+
+          // Form
+          React.createElement(
+            "form",
+            { className: "post-form", onSubmit: handleSubmit },
+            React.createElement("input", {
+              type: "text",
+              placeholder: "First Name",
+              value: title,
+              onChange: (e) => setTitle(e.target.value),
+            }),
+            React.createElement("textarea", {
+              placeholder: "Last Name",
+              value: body,
+              onChange: (e) => setBody(e.target.value),
+            }),
+            React.createElement(
+              "div",
+              { className: "form-actions" },
+              React.createElement("button", { type: "submit" }, editingId ? "Update" : "Add Student"),
+              editingId &&
+                React.createElement(
+                  "button",
+                  {
+                    type: "button",
+                    className: "cancel-btn",
+                    onClick: () => {
+                      setTitle("");
+                      setBody("");
+                      setEditingId(null);
+                    },
+                  },
+                  "Cancel"
+                )
+            )
+          ),
+
+          // Table
+          loading
+            ? React.createElement("p", null, "Loading…")
+            : React.createElement(
+                "table",
+                null,
+                React.createElement(
+                  "thead",
+                  null,
+                  React.createElement(
+                    "tr",
+                    null,
+                    ["ID", "First Name", "Last Name", "Created At", "Actions"].map((h) =>
+                      React.createElement("th", { key: h }, h)
+                    )
+                  )
+                ),
+                React.createElement(
+                  "tbody",
+                  null,
+                  posts.length > 0
+                    ? posts.map((p) =>
+                        React.createElement(
+                          "tr",
+                          { key: p.id },
+                          React.createElement("td", null, p.id),
+                          React.createElement("td", null, p.title),
+                          React.createElement("td", null, p.body),
+                          React.createElement("td", null, new Date(p.created_at).toLocaleString()),
+                          React.createElement(
+                            "td",
+                            null,
+                            React.createElement(
+                              "button",
+                              {
+                                onClick: () => {
+                                  setEditingId(p.id);
+                                  setTitle(p.title);
+                                  setBody(p.body);
+                                },
+                              },
+                              "Edit"
+                            ),
+                            React.createElement(
+                              "button",
+                              {
+                                className: "delete-btn",
+                                onClick: () => handleDelete(p.id),
+                              },
+                              "Delete"
+                            )
+                          )
+                        )
+                      )
+                    : React.createElement(
+                        "tr",
+                        null,
+                        React.createElement("td", { colSpan: 5 }, "No posts found.")
+                      )
+                )
+              )
+        )
+      )
+    )
   );
 }
